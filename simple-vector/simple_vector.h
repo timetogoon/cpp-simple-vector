@@ -259,11 +259,13 @@ const Type* SimpleVector<Type>::cend() const noexcept {
 
 template <typename Type>
 Type& SimpleVector<Type>::operator[](size_t index) noexcept {
+    assert(index < size_);
     return items_[index];
 }
 
 template <typename Type>
 const Type& SimpleVector<Type>::operator[](size_t index) const noexcept {
+    assert(index < size_);
     return const_cast<Type&>(items_[index]);
 }
 
@@ -320,7 +322,7 @@ void SimpleVector<Type>:: Resize(size_t new_size) {
 }
 
 template <typename Type>
-void SimpleVector<Type>:: Reserve(size_t new_capacity) {
+void SimpleVector<Type>::Reserve(size_t new_capacity) {
     if (new_capacity > capacity_) {
         ArrayPtr<Type> new_cont_(new_capacity);
         std::move(items_.Get(), items_.Get() + size_, new_cont_.Get());
@@ -362,6 +364,7 @@ void SimpleVector<Type>::PushBack(Type&& item) {
 
 template <typename Type>
 Type* SimpleVector<Type>::Insert(ConstIterator pos, const Type& value) {
+    assert(pos >= begin() && pos <= end());
     auto diffb = std::distance(cbegin(), pos);
     Iterator pos_ = begin() + diffb;
     if (capacity_ <= size_)
@@ -380,7 +383,7 @@ Type* SimpleVector<Type>::Insert(ConstIterator pos, const Type& value) {
         items_.swap(tmp);
         return &items_[diffb];
     }
-    std::copy_backward(pos_, end(), items_.Get() + diffb);
+    std::copy_backward(pos_, end(), items_.Get() + std::next(this->end()));
     items_[diffb] = value;
     ++size_;
     return &items_[diffb];
@@ -388,6 +391,7 @@ Type* SimpleVector<Type>::Insert(ConstIterator pos, const Type& value) {
 
 template <typename Type>
 Type* SimpleVector<Type>::Insert(ConstIterator pos, Type&& value) {
+    assert(pos >= begin() && pos <= end());
     auto diffb = std::distance(cbegin(), pos);
     Iterator pos_ = begin() + diffb;
     if (capacity_ <= size_)
@@ -414,13 +418,14 @@ Type* SimpleVector<Type>::Insert(ConstIterator pos, Type&& value) {
 
 template <typename Type>
 void SimpleVector<Type>::PopBack() noexcept {
-    if (size_ > 0) {
-        --size_;
-    }
+    assert(!IsEmpty());
+        --size_;    
 }
 
 template <typename Type>
 Type* SimpleVector<Type>::Erase(ConstIterator pos) {
+    assert(pos >= begin() && pos < end());
+    assert(!IsEmpty());
     auto distance = pos - cbegin();
     Iterator pos_ = items_.Get() + distance;
     std::copy(pos_ + 1, end(), pos_);
@@ -430,6 +435,8 @@ Type* SimpleVector<Type>::Erase(ConstIterator pos) {
 
 template <typename Type>
 Type* SimpleVector<Type>::Erase(Iterator pos) {
+    assert(pos >= begin() && pos < end());
+    assert(!IsEmpty());
     std::move(std::next(pos), end(), const_cast<Iterator>(pos));
     --size_;
     return const_cast<Iterator>(pos);
